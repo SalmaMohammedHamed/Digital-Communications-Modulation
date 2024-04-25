@@ -14,10 +14,9 @@ end
 
 % Description:
 %map the bits to the corresponding symbols 
-function MappedArr = Mapper(DataStream, Positions,NumOfSymbols)
-    if length(DataStream) == NumOfSymbols 
+function MappedArr = Mapper(ModulationType,DataStream, Positions,NumOfSymbols)
+    if length(DataStream)/NumOfSymbols == ModulationType 
         MappedArr = DataStream * 2 - 1;
-    
     else
         MappedArr = zeros(1,NumOfSymbols);
         ModulationType = length(DataStream)/NumOfSymbols;
@@ -63,6 +62,9 @@ function main()
     PSK8 = 3;
     QPSK = 2;
     QAM16 = 4;
+    %just a number to represent BFSK
+    BFSK = 5;
+
     
     % Define symbols positions for QPSK modulation
     
@@ -96,23 +98,23 @@ function main()
     
     
     BPSK_DataStream = DataCreation(BPSK);
-    BPSK_Mapped = Mapper(BPSK_DataStream,BPSK_Positions,NumOfSymbols);
+    BPSK_Mapped = Mapper(BPSK,BPSK_DataStream,BPSK_Positions,NumOfSymbols);
     BPSK_DeMapped = DeMapper(BPSK,BPSK_Mapped, BPSK_Positions,NumOfSymbols);
     disp(isequal(BPSK_DataStream, BPSK_DeMapped));
     
     QPSK_DataStream = DataCreation(QPSK);
-    QPSK_Mapped = Mapper(QPSK_DataStream,QPSK_Positions,NumOfSymbols);
+    QPSK_Mapped = Mapper(QPSK,QPSK_DataStream,QPSK_Positions,NumOfSymbols);
     QPSK_DeMapped = DeMapper(QPSK,QPSK_Mapped, QPSK_Positions,NumOfSymbols);
     disp(isequal(QPSK_DataStream, QPSK_DeMapped));
     
     PSK8_DataStream = DataCreation(PSK8);
-    PSK8_Mapped = Mapper(PSK8_DataStream,PSK8_Positions,NumOfSymbols);
+    PSK8_Mapped = Mapper(PSK8,PSK8_DataStream,PSK8_Positions,NumOfSymbols);
     PSK8_DeMapped = DeMapper(PSK8,PSK8_Mapped, PSK8_Positions,NumOfSymbols);
     disp(isequal(PSK8_DataStream, PSK8_DeMapped));
     
     
     QAM16_DataStream = DataCreation(QAM16);
-    QAM16_Mapped = Mapper(QAM16_DataStream,QAM16_Positions,NumOfSymbols);
+    QAM16_Mapped = Mapper(PSK8,QAM16_DataStream,QAM16_Positions,NumOfSymbols);
     QAM16_DeMapped = DeMapper(QAM16,QAM16_Mapped, QAM16_Positions,NumOfSymbols);
     disp(isequal(QAM16_DataStream, QAM16_DeMapped));
 
