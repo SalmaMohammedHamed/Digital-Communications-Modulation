@@ -142,9 +142,10 @@ function DeMappedArr = DeMapper(ModulationType, RecievedArr,SymbolsArr,NumOfBits
         end
         
     elseif ModulationType==BFSK
-        Angle=pi/4;
+        Angle1=pi/4;
+        Angle2=3*pi/4;
         for j = 1 : length(RecievedArr)
-            if (angle(RecievedArr(j)) < Angle && angle(RecievedArr(j))> -Angle)
+            if (angle(RecievedArr(j)) < Angle1 && angle(RecievedArr(j))> -Angle2)
             DeMappedArr(j) = SymbolsArr(1);
             else
             DeMappedArr(j) = SymbolsArr(2);
