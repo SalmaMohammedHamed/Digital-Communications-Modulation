@@ -61,7 +61,7 @@ function DeMappedArr = DeMapper(ModulationType, RecievedArr,SymbolsArr,NumOfBits
     % Perform demapping based on the modulation type
     if ModulationType == BPSK
         for j = 1 : length(RecievedArr)
-            if (RecievedArr(j) > 0)
+            if (RecievedArr(j) >= 0)
             DeMappedArr(j) = SymbolsArr(1);
             else
             DeMappedArr(j) = SymbolsArr(2);
@@ -155,8 +155,46 @@ function DeMappedArr = DeMapper(ModulationType, RecievedArr,SymbolsArr,NumOfBits
      
 end
 
-
-
+% Description:
+%   calculateBER calculates the Bit Error Rate (BER) and theoretical BER for a given set of Signal-to-Noise Ratio (SNR) values.
+%   It takes the SNR values, energy per bit (Eb), noise factor, mapped signal, symbol array, and data stream as inputs, and
+%   returns the simulated BER and theoretical BER.
+function [BER_sim, BER_ther] = calculateBER(SNR, Eb, noise_bits, ModulationType, mapped_signal, symbol_array, data_stream, NumOfBits)
+    BER_sim = zeros(size(SNR));
+    BER_ther = zeros(size(SNR));
+    N = length(SNR);
+    PSK8 = 3;
+    BFSK = 5;
+    for i = 1:N
+        N0 = Eb / (10^(SNR(i) / 10));
+        noise = noise_bits * sqrt(N0/2);
+        received_signal = mapped_signal + noise;
+        demapped_signal = DeMapper(ModulationType, received_signal, symbol_array, NumOfBits);
+        
+        calc_error = sum(demapped_signal ~= data_stream);
+        BER_sim(i) = calc_error / NumOfBits;
+        N1 = Eb / N0;
+        if ModulationType == PSK8
+            BER_ther(i)=(1/3)*erfc(sqrt(N1)*sin(pi/8));
+        elseif ModulationType == BFSK
+            BER_ther(i) = 0.5 * erfc(sqrt(N1/2));
+        else
+            BER_ther(i) = 0.5 * erfc(sqrt(N1));
+        end
+    end
+end
+% Description:
+%   Plotting BER theortical and simulated to compare between them
+function plotBER(SNR, BER_sim, BER_ther, title_text)
+    figure();
+    semilogy(SNR, BER_sim, 'b');
+    hold on;
+    semilogy(SNR, BER_ther, 'r--');
+    title(title_text);
+    xlabel('Eb/No (dB)');
+    ylabel('BER');
+    legend('practical', 'theoretical');
+end
 
 % Description:
 % Entry point for the code's main logic
@@ -201,39 +239,61 @@ function main
     QAM16_SympolsArr=[[1 0];[1 1];[0 1];[0 0]];
     BFSK_SympolsArr=[1 0];
     
-    
+    %%----------------------- BPSK -------------- %%
     BPSK_DataStream = DataCreation(NumOfBits);
     BPSK_Mapped = Mapper(BPSK,BPSK_DataStream,BPSK_Positions,NumOfBits/BPSK);
-    BPSK_DeMapped = DeMapper(BPSK,BPSK_Mapped,BPSK_SympolsArr,NumOfBits);%after creating the channel use the Mapped symbols after the channel effect
-    disp(isequal(BPSK_DataStream, BPSK_DeMapped));
     
+    noise_bits=randn(size(BPSK_Mapped));
+    SNR=-4:14;
+    Eb=1;
+    [BER_sim, BER_ther] = calculateBER(SNR, Eb, noise_bits, BPSK, BPSK_Mapped, BPSK_SympolsArr, BPSK_DataStream, NumOfBits);
+    plotBER(SNR, BER_sim, BER_ther, 'BER Performance for BPSK');
+
+
+    
+    %%---------------------QPSK--------------------%%
     QPSK_DataStream = DataCreation(NumOfBits);
     QPSK_Mapped = Mapper(QPSK,QPSK_DataStream,QPSK_Positions,NumOfBits/QPSK);
-    QPSK_DeMapped = DeMapper(QPSK,QPSK_Mapped,QPSK_SympolsArr,NumOfBits);
-    result=isequal(QPSK_DataStream,QPSK_DeMapped);
-    disp(result);
-    
+    noise_qpsk=randn(size(QPSK_Mapped))+randn(size(QPSK_Mapped))*1i;
+    Eb=1;
+    SNR=-4:14;
+    [BER_sim2, BER_ther2] = calculateBER(SNR, Eb, noise_qpsk, QPSK, QPSK_Mapped, QPSK_SympolsArr, QPSK_DataStream, NumOfBits);
+    plotBER(SNR, BER_sim2, BER_ther2, 'BER Performance for QPSK');
+
+    %%---------------------QPSK not grey ----------%%
     QPSK_NotGreyCodedDataStream = DataCreation(NumOfBits);
     QPSK_NotGreyCodedMapped = Mapper(QPSK,QPSK_NotGreyCodedDataStream,QPSK_NotGreyCodedPositions,NumOfBits/QPSK);
-    QPSK_NotGreyCodedDeMapped = DeMapper(QPSK,QPSK_NotGreyCodedMapped,QPSK_NotGreyCodedSympolsArr,NumOfBits);
-    result=isequal(QPSK_NotGreyCodedDataStream,QPSK_NotGreyCodedDeMapped);
-    disp(result);
-    
+    noise_not_grey_qbsk=randn(size(QPSK_NotGreyCodedMapped))+randn(size(QPSK_NotGreyCodedMapped))*1i;
+    Eb=1;
+    SNR=-4:14;
+    [BER_sim3, BER_ther3] = calculateBER(SNR, Eb, noise_not_grey_qbsk, QPSK ,QPSK_NotGreyCodedMapped, QPSK_NotGreyCodedSympolsArr, QPSK_NotGreyCodedDataStream, NumOfBits);
+    plotBER(SNR, BER_sim3, BER_ther3, 'BER Performance for QPSK Not Grey');
+
+    %%-----------------PSK8-------------------%%    
     PSK8_DataStream = DataCreation(NumOfBits);
     PSK8_Mapped = Mapper(PSK8,PSK8_DataStream,PSK8_Positions,NumOfBits/PSK8);
-    PSK8_DeMapped = DeMapper(PSK8,PSK8_Mapped,PSK8_SympolsArr,NumOfBits);
-    disp(isequal(PSK8_DataStream, PSK8_DeMapped));
-    
+    noise_PSK8=randn(size(PSK8_Mapped))+randn(size(PSK8_Mapped))*1i;
+    Eb=1;
+    SNR=-4:14;
+    [BER_sim4, BER_ther4] = calculateBER(SNR, Eb, noise_PSK8, PSK8, PSK8_Mapped, PSK8_SympolsArr, PSK8_DataStream, NumOfBits);
+    plotBER(SNR, BER_sim4, BER_ther4, 'BER Performance for PSK8');
 
 
+    %%-------------------QAM16--------------%%
     QAM16_DataStream = DataCreation(NumOfBits);
     QAM16_Mapped = Mapper(QAM16,QAM16_DataStream,QAM16_Positions,NumOfBits/QAM16);
-    QAM16_DeMapped = DeMapper(QAM16,QAM16_Mapped,QAM16_SympolsArr,NumOfBits);
-    disp(isequal(QAM16_DataStream, QAM16_DeMapped));
+    noise_QAM=randn(size(QAM16_Mapped))+randn(size(QAM16_Mapped))*1i;
+    Eb=1;
+    SNR=-4:14;
+    [BER_sim5, BER_ther5] = calculateBER(SNR, Eb, noise_QAM, QAM16, QAM16_Mapped, QAM16_SympolsArr, QAM16_DataStream, NumOfBits);
+    plotBER(SNR, BER_sim5, BER_ther5, 'BER Performance for QAM16');
     
-
+    %%--------------------BFSK-------------%%
     BFSK_DataStream = DataCreation(NumOfBits);
     BFSK_Mapped = Mapper(BFSK,BFSK_DataStream,BFSK_Positions,NumOfBits);
-    BFSK_DeMapped = DeMapper(BFSK,BFSK_Mapped,BFSK_SympolsArr,NumOfBits);
-    disp(isequal(BFSK_DataStream, BFSK_DeMapped));
+    noise_BFSK=randn(size(BFSK_Mapped))+randn(size(BFSK_Mapped))*1i;
+    Eb=1;
+    SNR=-4:14;
+    [BER_sim6, BER_ther6] = calculateBER(SNR, Eb, noise_BFSK, BFSK, BFSK_Mapped, BFSK_SympolsArr, BFSK_DataStream, NumOfBits);
+    plotBER(SNR, BER_sim6, BER_ther6, 'BER Performance for BFSK');
 end
