@@ -218,7 +218,7 @@ end
         for taw = 0:NumRVs-t % This loop sweeps over taw for a certain t.
             sum = 0;
             for i = 1:NumRealizations
-                sum_mat = ensample(i,t) .* ensample(i,t+taw); % Autocorrelation
+                sum_mat = ensample(i,t) .* conj(ensample(i,t+taw)); % Autocorrelation
                 sum = sum + sum_mat; % Sum of autocorrelated values of certain t and taw in each realization.
             end
             StatAutoArr(taw+1,t) = sum / NumRealizations;
