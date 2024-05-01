@@ -196,6 +196,60 @@ function plotBER(SNR, BER_sim, BER_ther, title_text)
     legend('practical', 'theoretical');
 end
 
+%Descroption:
+%creating a whole ensample of BFSK
+function BFSK_EnsampleArr = BFSK_Ensample(NumRealizations,NumRVs)
+    BFSK=5;
+    BFSK_Positions=[ 1.0+0.0i,0.0+1.0i];
+    BFSK_EnsampleArr = zeros(NumRealizations,NumRVs);
+    BFSK_EnsampleArrMapped=zeros(NumRealizations,NumRVs);
+    for j = 1:NumRealizations
+        BFSK_EnsampleArr(j,:) = randi([0 1], 1, NumRVs);
+        BFSK_EnsampleArrMapped(j,:)=Mapper(BFSK,BFSK_EnsampleArr(j,:),BFSK_Positions,NumRVs);
+    end
+end
+
+%Description:
+%calculating the Satatistical autocorrelation
+    function StatAutoArr = StatAuto(ensample,NumRealizations,NumRVs)
+    % StatAutoArr auto
+    StatAutoArr = zeros(NumRVs, NumRVs);
+    for t = 1:NumRVs  % This loop sweeps over t.
+        for taw = 0:NumRVs-t % This loop sweeps over taw for a certain t.
+            sum = 0;
+            for i = 1:NumRealizations
+                sum_mat = ensample(i,t) .* ensample(i,t+taw); % Autocorrelation
+                sum = sum + sum_mat; % Sum of autocorrelated values of certain t and taw in each realization.
+            end
+            StatAutoArr(taw+1,t) = sum / NumRealizations;
+        end
+    end
+end
+
+%Description:
+%BFSK PSD
+function BFSK_PSD (StatAutoArr)
+    % Get the length of the autocorrelation vector
+    N = length(StatAutoArr(:, 1));
+    
+    % Perform FFT on the autocorrelation vector
+    Sx = fft(StatAutoArr(:, 1), N);
+    
+    % Define the frequency axis
+    n = -N/2:N/2-1;
+    fs = 100; % Sampling frequency
+    
+    % Plot the PSD
+    figure;
+    plot(fs * n / N, fftshift(abs(Sx)), 'LineWidth', 1);
+    title('PSD for BFSK');
+    xlabel('Frequency (Hz)');
+    ylabel('Power Spectral Density');
+end
+
+
+
+
 % Description:
 % Entry point for the code's main logic
 function main
@@ -296,4 +350,12 @@ function main
     SNR=-4:14;
     [BER_sim6, BER_ther6] = calculateBER(SNR, Eb, noise_BFSK, BFSK, BFSK_Mapped, BFSK_SympolsArr, BFSK_DataStream, NumOfBits);
     plotBER(SNR, BER_sim6, BER_ther6, 'BER Performance for BFSK');
+
+    %%------------BFSK PSD---------------%%
+    NumRealizations=500;
+    NumRVs=700;
+    BFSK_EnsampleArr=BFSK_Ensample(NumRealizations,NumRVs);
+    StatAutoArr=StatAuto(BFSK_EnsampleArr,NumRealizations,NumRVs);
+    BFSK_PSD(StatAutoArr);
+
 end
