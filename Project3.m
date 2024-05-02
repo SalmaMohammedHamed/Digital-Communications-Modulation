@@ -198,7 +198,7 @@ end
 
 %Descroption:
 %creating a whole ensample of BFSK
-function BFSK_EnsampleArr = BFSK_Ensample(NumRealizations,NumRVs)
+function BFSK_EnsampleArrMapped = BFSK_Ensample(NumRealizations,NumRVs)
     BFSK=5;
     BFSK_Positions=[ 1.0+0.0i,0.0+1.0i];
     BFSK_EnsampleArr = zeros(NumRealizations,NumRVs);
@@ -237,7 +237,7 @@ function BFSK_PSD (StatAutoArr)
     
     % Define the frequency axis
     n = -N/2:N/2-1;
-    fs = 100; % Sampling frequency
+    fs = 1000/3; % Sampling frequency
     
     % Plot the PSD
     figure;
@@ -245,6 +245,27 @@ function BFSK_PSD (StatAutoArr)
     title('PSD for BFSK');
     xlabel('Frequency (Hz)');
     ylabel('Power Spectral Density');
+ 
+
+
+
+    % Get the length of the autocorrelation vector
+    N = length(StatAutoArr(:, 1));
+    
+    % Perform FFT on the autocorrelation vector
+    Sx = fft(StatAutoArr(:, 1), N);
+    
+    % Define the frequency axis
+    n = -N/2:N/2-1;
+    fs = 1000/3; % Sampling frequency
+    
+    % Plot the PSD
+    figure;
+    plot(fs * n / N, fftshift(abs(Sx)), 'LineWidth', 1);
+    title('PSD for BFSK');
+    xlabel('Frequency (Hz)');
+    ylabel('Power Spectral Density');
+    xlim([-2, 2]);
 end
 
 
