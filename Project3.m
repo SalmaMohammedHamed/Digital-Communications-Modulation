@@ -165,6 +165,7 @@ function [BER_sim, BER_ther] = calculateBER(SNR, Eb, noise_bits, ModulationType,
     N = length(SNR);
     PSK8 = 3;
     BFSK = 5;
+    QAM16 = 4;
     for i = 1:N
         N0 = Eb / (10^(SNR(i) / 10));
         noise = noise_bits * sqrt(N0/2);
@@ -175,9 +176,11 @@ function [BER_sim, BER_ther] = calculateBER(SNR, Eb, noise_bits, ModulationType,
         BER_sim(i) = calc_error / NumOfBits;
         N1 = Eb / N0;
         if ModulationType == PSK8
-            BER_ther(i)=(1/3)*erfc(sqrt(N1)*sin(pi/8));
+            BER_ther(i)=(1/3)*erfc(sqrt(1/N0)*sin(pi/8));
         elseif ModulationType == BFSK
             BER_ther(i) = 0.5 * erfc(sqrt(N1/2));
+        elseif ModulationType == QAM16
+            BER_ther(i) = (3/8) * erfc(sqrt(N1/2.5));
         else
             BER_ther(i) = 0.5 * erfc(sqrt(N1));
         end
@@ -195,6 +198,40 @@ function plotBER(SNR, BER_sim, BER_ther, title_text)
     ylabel('BER');
     legend('practical', 'theoretical');
 end
+% Description:
+%   Plotting BER theortical and simulated for all modulations on one plot
+function plotAll(SNR, BER_sim_bpsk, BER_ther_bpsk, BER_sim_qpsk, BER_ther_qpsk, BER_sim_qpsk_ng, ...
+ BER_sim_psk8, BER_ther_psk8, BER_sim_QAM, BER_ther_QAM, title_text)
+    
+    figure();
+    semilogy(SNR, BER_sim_bpsk, 'LineWidth', 2); % Thickened line for BPSK simulated
+    hold on;
+    semilogy(SNR, BER_ther_bpsk, '--', 'LineWidth', 2); % Thickened dashed line for BPSK theoretical
+    hold on;
+    semilogy(SNR, BER_sim_qpsk, 'LineWidth', 2); % Thickened line for QPSK simulated
+    hold on;
+    semilogy(SNR, BER_ther_qpsk, '--', 'LineWidth', 2); % Thickened dashed line for QPSK theoretical
+    hold on;
+    semilogy(SNR, BER_sim_qpsk_ng, 'LineWidth', 2); % Thickened line for QPSK Not Grey simulated
+    hold on;
+    semilogy(SNR, BER_sim_psk8, 'LineWidth', 2); % Thickened line for PSK8 simulated
+    hold on;
+    semilogy(SNR, BER_ther_psk8, '--', 'LineWidth', 2); % Thickened dashed line for PSK8 theoretical
+    hold on;
+    semilogy(SNR, BER_sim_QAM, 'LineWidth', 2); % Thickened line for QAM16 simulated
+    hold on;
+    semilogy(SNR, BER_ther_QAM, '--', 'LineWidth', 2); % Thickened dashed line for QAM16 theoretical
+    
+    hold off;
+    title(title_text);
+    xlabel('Eb/No (dB)');
+    ylabel('BER');
+    legend('BPSK Simulated', 'BPSK Theoretical', 'QPSK Simulated', 'QPSK Theoretical', ...
+        'QPSK Not Grey Simulated', 'PSK8 Simulated', 'PSK8 Theoretical', ...
+        'QAM16 Simulated', 'QAM16 Theoretical');
+    ylim([1e-6, 1]); % Set y-axis limits from 10^-4 to 1
+end
+
 
 %Descroption:
 %creating a whole ensample of BFSK
@@ -334,7 +371,7 @@ function main
     PSK8_DataStream = DataCreation(NumOfBits);
     PSK8_Mapped = Mapper(PSK8,PSK8_DataStream,PSK8_Positions,NumOfBits/PSK8);
     noise_PSK8=randn(size(PSK8_Mapped))+randn(size(PSK8_Mapped))*1i;
-    Eb=1;
+    Eb=1/3;
     SNR=-4:14;
     [BER_sim4, BER_ther4] = calculateBER(SNR, Eb, noise_PSK8, PSK8, PSK8_Mapped, PSK8_SympolsArr, PSK8_DataStream, NumOfBits);
     plotBER(SNR, BER_sim4, BER_ther4, 'BER Performance for PSK8');
@@ -344,11 +381,13 @@ function main
     QAM16_DataStream = DataCreation(NumOfBits);
     QAM16_Mapped = Mapper(QAM16,QAM16_DataStream,QAM16_Positions,NumOfBits/QAM16);
     noise_QAM=randn(size(QAM16_Mapped))+randn(size(QAM16_Mapped))*1i;
-    Eb=1;
+    Eb=2.5;
     SNR=-4:14;
     [BER_sim5, BER_ther5] = calculateBER(SNR, Eb, noise_QAM, QAM16, QAM16_Mapped, QAM16_SympolsArr, QAM16_DataStream, NumOfBits);
     plotBER(SNR, BER_sim5, BER_ther5, 'BER Performance for QAM16');
     
+    %%------------------plot All on one plot ---%
+    plotAll(SNR, BER_sim, BER_ther,BER_sim2, BER_ther2, BER_sim3, BER_sim4, BER_ther4, BER_sim5, BER_ther5, "A plot for all modulations BER");
     %%--------------------BFSK-------------%%
     BFSK_DataStream = DataCreation(NumOfBits);
     BFSK_Mapped = Mapper(BFSK,BFSK_DataStream,BFSK_Positions,NumOfBits);
