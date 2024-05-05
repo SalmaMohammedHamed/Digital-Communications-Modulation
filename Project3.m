@@ -199,26 +199,33 @@ end
 %Descroption:
 %creating a whole ensample of BFSK
 function BFSK_EnsampleArrMapped = BFSK_Ensample(NumRealizations,NumRVs)
-    BFSK=5;
-    BFSK_Positions=[ 1.0+0.0i,0.0+1.0i];
+    Tb=10;
+    Eb=1;
+    t=1:1:Tb;
+    delf=1/Tb;
     BFSK_EnsampleArr = zeros(NumRealizations,NumRVs);
     BFSK_EnsampleArrMapped=zeros(NumRealizations,NumRVs);
     for j = 1:NumRealizations
         BFSK_EnsampleArr(j,:) = randi([0 1], 1, NumRVs);
-        BFSK_EnsampleArrMapped(j,:)=Mapper(BFSK,BFSK_EnsampleArr(j,:),BFSK_Positions,NumRVs);
+        
+    end
+    for i=1:1:NumRealizations
+        for j=1:1:NumRVs
+          BFSK_EnsampleArrMapped(i,(j-1)*Tb+1:(j)*Tb)=BFSK_EnsampleArr(i,j)*sqrt(2*Eb/Tb)+(~BFSK_EnsampleArr(i,j))*...
+              sqrt(2*Eb/Tb)*(cos(2*pi*delf*t)+1i*sin(2*pi*delf*t));
+        end
     end
 end
 
 %Description:
 %calculating the Satatistical autocorrelation
     function StatAutoArr = StatAuto(ensample,NumRealizations,NumRVs)
-    % StatAutoArr auto
     StatAutoArr = zeros(NumRVs, NumRVs);
     for t = 1:NumRVs  % This loop sweeps over t.
         for taw = 0:NumRVs-t % This loop sweeps over taw for a certain t.
             sum = 0;
             for i = 1:NumRealizations
-                sum_mat = ensample(i,t) .* conj(ensample(i,t+taw)); % Autocorrelation
+                sum_mat = ensample(i,t) .* ensample(i,t+taw); % Autocorrelation
                 sum = sum + sum_mat; % Sum of autocorrelated values of certain t and taw in each realization.
             end
             StatAutoArr(taw+1,t) = sum / NumRealizations;
@@ -237,7 +244,7 @@ function BFSK_PSD (StatAutoArr)
     
     % Define the frequency axis
     n = -N/2:N/2-1;
-    fs = 1000/3; % Sampling frequency
+    fs = 10; % Sampling frequency
     
     % Plot the PSD
     figure;
@@ -245,27 +252,6 @@ function BFSK_PSD (StatAutoArr)
     title('PSD for BFSK');
     xlabel('Frequency (Hz)');
     ylabel('Power Spectral Density');
- 
-
-
-
-    % Get the length of the autocorrelation vector
-    N = length(StatAutoArr(:, 1));
-    
-    % Perform FFT on the autocorrelation vector
-    Sx = fft(StatAutoArr(:, 1), N);
-    
-    % Define the frequency axis
-    n = -N/2:N/2-1;
-    fs = 1000/3; % Sampling frequency
-    
-    % Plot the PSD
-    figure;
-    plot(fs * n / N, fftshift(abs(Sx)), 'LineWidth', 1);
-    title('PSD for BFSK');
-    xlabel('Frequency (Hz)');
-    ylabel('Power Spectral Density');
-    xlim([-2, 2]);
 end
 
 
