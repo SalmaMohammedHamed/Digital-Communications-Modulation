@@ -289,6 +289,8 @@ function BFSK_PSD (StatAutoArr)
     title('PSD for BFSK');
     xlabel('Frequency (Hz)');
     ylabel('Power Spectral Density');
+    ylim([0, 5]);
+    xlim([-3 ,3]);
 end
 
 
