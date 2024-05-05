@@ -388,6 +388,15 @@ function main
     [BER_sim5, BER_ther5] = calculateBER(SNR, Eb, noise_QAM, QAM16, QAM16_Mapped, QAM16_SympolsArr, QAM16_DataStream, NumOfBits);
     plotBER(SNR, BER_sim5, BER_ther5, 'BER Performance for QAM16');
     
+    %% ---------------plotting not grey simulation vs grey simulation %%
+    figure();
+    semilogy(SNR, BER_sim3, 'b');
+    hold on;
+    semilogy(SNR, BER_sim2, 'r--');
+    title("Not Grey QPSK Vs Grey QPSK");
+    xlabel('Eb/No (dB)');
+    ylabel('BER');
+    legend('Not grey QPSK simulation', 'grey QPSK simulation');
     %%------------------plot All on one plot ---%
     plotAll(SNR, BER_sim, BER_ther,BER_sim2, BER_ther2, BER_sim3, BER_sim4, BER_ther4, BER_sim5, BER_ther5, "A plot for all modulations BER");
     %%--------------------BFSK-------------%%
